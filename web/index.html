@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Wordle game</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <!-- Imports for the "Montserrat" font from google fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+        
+        <link href="CSS/main.css" rel="stylesheet">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js" defer></script>
+        <script src="JS/index.js" defer></script>
+    </head>
+    <body>
+        <main class="mainbox">
+            <div class="iamge">
+                <img src="images/logo 1.png" width="300" height="113" alt="Logo">
+            </div>
+            <div class="buffer">
+                <h1 class="title">Wordle with Friends</h1>
+            </div>
+                <div class="allForms">
+                    <div class="containerGame">
+                        <div class="buffer">
+                            <h2 class="subtitle">Host game</h1>
+                        </div>
+                        <form action="redirectServlet" method="POST" id="hostForm">
+                            <div class="buffer">
+                                <label for="hostname" class="labels">Enter chosen host name: </label>
+                                <input name="hostname" type="text" class="textboxes" id="hostID" placeholder="John" required>
+                            </div>
+
+                            <div class="buffer">
+                                <label for="ID" class="labels">Enter game ID (5 digit ID): </label>
+                                <input name="ID" id="hostGameID" type="number" class="textboxes" placeholder="12345" min="0" max="99999" required>
+                            </div>
+
+                            <div class="buffer">
+                                <input type="submit" value="Create lobby" class="submission">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="containerGame">
+                        <div class="buffer">
+                            <h2 class="subtitle">Join game</h1>
+                        </div>
+                        <form action="redirectServlet" method="POST" id="joinForm">
+                            <div class="buffer">
+                                <label for="guestname" class="labels">Enter name: </label>
+                                <input name="guestname" type="text" class="textboxes" id="guestID" placeholder="John" required>
+                            </div>
+
+                            <div class="buffer">
+                                <label for="ID" class="labels">Enter game ID (5 digit ID): </label>
+                                <input name="ID" id="joinGameID" type="number" class="textboxes" placeholder="12345" min="0" max="99999" required>
+                            </div>
+
+                            <div class="buffer">
+                                <input type="submit" value="Join lobby" class="submission">
+                            </div>
+                        </form>
+                    </div>
+            </div>
+        </main>
+    </body>
+</html>
