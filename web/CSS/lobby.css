@@ -14,12 +14,15 @@ and open the template in the editor.
     
     display: flex;
     flex-direction: row;
+    z-index: 1;
+    position: relative;
 }
 
 .buffer{
     display: flex;
     flex-direction: column;
     margin: 5px;
+    z-index: 1;
     
     align-items: center;
     justify-content: center;
@@ -28,12 +31,14 @@ and open the template in the editor.
 .title{
     font-family: Montserrat;
     font-size: 35px;
+    z-index: 1;
 }
 
 .subtitle{
     font-family: Montserrat;
     font-size: 25px;
     font-weight: 600;
+    z-index: 1;
 }
 
 .players{
@@ -47,6 +52,8 @@ and open the template in the editor.
     border-right: 5px solid black;
     display: flex;
     flex-direction: column;
+    
+    z-index: 1;
 }
 
 .combox{
@@ -56,6 +63,8 @@ and open the template in the editor.
     
     padding: 10px;
     width: 100%;
+    
+    z-index: 1;
 }
 
 .options{
@@ -70,6 +79,8 @@ and open the template in the editor.
     justify-content: center;
     
     border-bottom: 2px solid black;
+    
+    z-index: 1;
 }
 
 .results{
@@ -82,6 +93,8 @@ and open the template in the editor.
     
     align-items: center;
     justify-content: center;
+    
+    z-index: 1;
 }
 
 .chat{
@@ -97,6 +110,8 @@ and open the template in the editor.
     
     align-items: center;
     justify-content: center;
+    
+    z-index: 1;
 }
 
 .lables{
@@ -105,6 +120,8 @@ and open the template in the editor.
     font-weight: 600;
     
     padding: 3px;
+    
+    z-index: 1;
 }
 
 .sections{
@@ -121,6 +138,8 @@ and open the template in the editor.
 
     padding: 3px;
     font-weight: 500;
+    
+    z-index: 1;
 }
 
 #textarea{
@@ -129,6 +148,8 @@ and open the template in the editor.
 
     font-family:Montserrat;
     font-size: 15px;
+    
+    z-index: 1;
 }
 
 .actions{
@@ -150,6 +171,8 @@ and open the template in the editor.
     cursor: pointer;
     transition-duration: 0.5s;
     box-shadow: 0 3px #888;
+    
+    z-index: 1;
 }
 
 .actions:hover{
@@ -165,4 +188,47 @@ and open the template in the editor.
 .text_holder3{
     overflow-y:auto;
     font-size: 15px;
+}
+
+.answers{
+    font-family: Montserrat;
+    width: 100%;
+    height: 100%;
+    
+    display: grid;
+    grid-template-columns: auto auto auto auto;
+    margin: 10px;
+    z-index: 20;
+    
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    background-color: #fff;
+}
+
+.answerWord{
+    font-family: Montserrat;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 5px solid rgba(0, 0, 0, 1);
+    padding: 20px;
+    margin: 20px;
+    font-size: 30px;
+    text-align: center;
+    
+    z-index: 20;
+}
+
+.correct{
+    background-color: #538d4e;
+    color: #fff;
+}
+
+.halfWay{
+    background-color: #b59f3b;
+    color: #fff;
+}
+
+.wrong{
+    background-color: #3a3a3c;
+    color: #fff;
 }

@@ -12,11 +12,11 @@ import java.io.*;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.json.simple.JSONArray;
 
 
 /**
@@ -74,19 +74,98 @@ public class Players {
         JSONObject result = new JSONObject();
         
         for(JSONObject elem: gameRooms){
-            System.out.println("here null "+elem.toJSONString());
+            System.out.println("finding lobby "+elem.toJSONString());
             if(gameID.equals(""+elem.get("gameID")))
                 result = elem;
         }
-            
-        
         return result;
+    }
+    
+    public void returnWords(JSONObject obj) throws IOException{
+        JSONObject gameLobby = findLobbybyId(""+obj.get("game"));
+        String[] words = new String[20];
+        
+        int randomIndex = (int)(Math.random()*(10));
+        InputStream txt = (adress.class.getResourceAsStream("words.txt"));
+        
+        JSONArray lister = new JSONArray();
+        
+        Scanner scanner = new Scanner(txt);
+        int count = 0;
+        int newIndex = 0;
+        while (scanner.hasNextLine()) {
+            String line = scanner.nextLine();
+            if(count <= randomIndex){
+                count+=1;
+                continue;
+            }
+            else if (count > (randomIndex+20)){
+                count+=1;
+                break;
+            }
+            
+            lister.add(line.trim());
+            words[newIndex] = line.trim();
+            newIndex+=1;
+            count+=1;
+        }
+        scanner.close();
+        
+        System.out.println(lister.toJSONString());
+        
+        // public void broadCastLobby(JSONObject lobby, String exclusion, String event, String player, String message)
+        broadCastLobby(gameLobby, "", "receiveWords", returnName(gameLobby, "user1"), lister.toJSONString());
+    }
+    
+    public int countPlayers(JSONObject obj){
+        int count = 0;
+        for (int i=1; i<5; i++){ // !(lobby.get( ("user"+i) ) instanceof String)
+            //System.out.println( ("user"+i) + " " +((obj.get( ("user"+i) )) instanceof String) + " " + obj.get( ("user"+i)) );
+            if ( !((obj.get( ("user"+i) )) instanceof String))
+                count++;
+        }
+        
+        return count;
+    }
+    
+    public void collectResults(JSONObject json) throws IOException{
+        JSONObject obj = findLobbybyId( (""+json.get("game")) );
+        
+        /*
+            players.put("highscore", 0);
+            players.put("winner", "");
+            players.put("completedCount", 0);
+        */
+        
+        System.out.println(json.get("score"));
+        int newScore = Integer.parseInt(""+json.get("score"));
+        String newPlayer = (String) json.get("sender");
+        
+        int currentScore = (int) obj.get("highscore");
+        String currentPlayer = (String) obj.get("winner");
+        
+        if (newScore > currentScore){
+            obj.put("highscore", newScore);
+            obj.put("winner", newPlayer);
+        }
+        else if (newScore == currentScore){
+            String combinedWinners = currentPlayer + " " + newPlayer;
+            obj.put("winner", combinedWinners);
+        }
+        
+        obj.put("completedCount", (Integer.parseInt(""+obj.get("completedCount")) + 1) );
+        
+        if ( ((int)obj.get("completedCount")) >= countPlayers(obj)){
+            String results = (String) obj.get("winner") + " : " + (int) obj.get("highscore");
+            System.out.println(results);
+            broadCastLobby(obj, "", "lobbyWinners", "server", results);
+        }
     }
     
     @OnOpen
     public void onOpen(Session peer) throws IOException {
         peers.add(peer);
-        System.out.println(peer.getId());
+        //System.out.println(peer.getId());
         this.ip = InetAddress.getLocalHost();
         hostname = this.ip.getHostAddress();
     }
@@ -98,13 +177,11 @@ public class Players {
     
     @OnMessage
     public void onMessage (Session session , String message) throws JSONException, ParseException, IOException{
-        System.out.println(message);
+        //System.out.println(message);
         
         JSONParser parser = new JSONParser();
         JSONObject json = (JSONObject) parser.parse(message);
         
-        System.out.println(session);
-        System.out.println(json.toJSONString());
         if (json.get("event").equals("lobbyStart")){
             
             for (JSONObject elem: gameRooms){
@@ -120,12 +197,14 @@ public class Players {
             players.put("user2", "");
             players.put("user3", "");
             players.put("user4", "");
+            players.put("highscore", 0);
+            players.put("winner", "");
+            players.put("completedCount", 0);
             
             gameRooms.add(players);
         }
         
         else if(json.get("event").equals("lobbyJoin")){
-            System.out.println("New client joining");
             for (JSONObject elem: gameRooms){
                 if(json.get("game").equals(elem.get("gameID"))){
                     System.out.println("Found");
@@ -162,7 +241,6 @@ public class Players {
                         return;
                     }
                     
-                    System.out.println("Joining changes "+ elem.toJSONString());
                     return;
                 }
             }
@@ -173,8 +251,7 @@ public class Players {
             JSONObject lobby = findLobbybyId( ""+json.get("game") );
             String exclusion = "";
             
-            System.out.println(lobby.toJSONString());
-            System.out.println("The find lobby: "+lobby.toJSONString());
+            //System.out.println("The find lobby: "+lobby.toJSONString());
             
             /*
             for (int i=1; i<5; i++){
@@ -195,22 +272,15 @@ public class Players {
             
             broadCastLobby(lobby, exclusion, "gameStart", (""+json.get("sender")), "http://" + hostname + ":8080/GameProject/game.html" );
         }
-        System.out.println("GameRoom "+gameRooms.toString());
-    }
-    
-    /*
-    @OnMessage
-    public void onMessage (Session session , String message) {
-        System.out.println("Recieved message: " + message );
-        for (Session peer : peers) {
-            if (!peer.equals(session)) {
-                try{
-                    peer.getBasicRemote().sendText(message);
-                } catch( IOException ex){
-                    System.out.println(ex.getMessage());
-                }
-            }
+        
+        else if (json.get("event").equals("receiveWords")){
+            returnWords(json);
         }
+        
+        else if (json.get("event").equals("endGame")){
+            System.out.println("Activated results section");
+            collectResults(json);
+        }
+        //System.out.println("GameRoom "+gameRooms.toString());
     }
-    */
 }

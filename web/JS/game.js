@@ -5,35 +5,30 @@
  */
 
 
-var endpointGame = "ws://"+document.location.host+"/GameProject/game";
-var websocketNew = new WebSocket(endpointGame);
+//var endpointGame = "ws://"+document.location.host+"/GameProject/game";
+
+var endpoint = "ws://"+document.location.host+"/GameProject/lobbier";
+var websocketNew = new WebSocket(endpoint);
+
+console.log(endpoint);
 
 var highExplosiveResearch = "";
 
-var host = sessionStorage.getItem('hostUsername');
-var guest = sessionStorage.getItem('username');
+var host = sessionStorage.getItem('hostUsername2');
+var guest = sessionStorage.getItem('username2');
 var isHost = false;
-var gameID = sessionStorage.getItem('gameID');
+var gameID = sessionStorage.getItem('gameID2');
 
 var rounds = sessionStorage.getItem('rounds');
 var timer = sessionStorage.getItem('max_time');
 
-var start = False;
+var start = false;
 var wordlist = [];
 
-
-/*
-    Client: Start Game
-    Server: Send words
-    Client: Show words for 3 seconds
-    Client: Start timer
-    Client: End timer
-    Client: Give point and round details
-    Client: Next round
-*/
-
-function send(obj, websocket) {
-    websocket.send(JSON.stringify(obj));
+function send(obj) {
+    console.log("Send function working");
+    console.log(obj);
+    websocketNew.send(JSON.stringify(obj));
 }
 
 function createSquares() {
@@ -48,9 +43,6 @@ function createSquares() {
     }
 }
 
-start.addEventListener("change", function(){
-    setInterval(timerStart, 1000, timer);
-});
 
 function getCurrentWordArr() {
     const numberOfGuessedWords = guessedWords.length;
@@ -101,8 +93,9 @@ function timerStart(){
 
 
 function getWordList(){
+    console.log("Running and getting words");
     let packet = {
-        event : "roundStart",
+        event : "receiveWords",
         sender : (isHost ? host : guest),
         game : (""+gameID)
     };
@@ -132,17 +125,29 @@ function receiveWordList(obj){
 }
 
 function getNewWord() {
-    currentword = wordlist[Math.floor(Math.random() * array.length)];
+    currentword = wordlist[Math.floor(Math.random() * wordlist.length)];
 }
 
 
+/*
+    Client: Start Game
+    Server: Send words
+    Client: Show words for 3 seconds
+    Client: Start timer
+    Client: End timer
+    Client: Give point and round details
+    Client: Next round
+*/
+
 window.onload = function() {
+    console.log("Working")
     createSquares();
     
     if(host != null)
         isHost = true;
     
-    websocketNew.onopen = getWordList();
+    console.log("All session storages " + host + " " + guest + " " + isHost + " " + gameID + " " + rounds + " " + timer);
+    websocketNew.onopen = () => getWordList();
     
     getNewWord();
     

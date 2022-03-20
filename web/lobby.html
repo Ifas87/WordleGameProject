@@ -16,6 +16,7 @@ and open the template in the editor.
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
         
         <link href="CSS/lobby.css" rel="stylesheet">
+        <link href="CSS/game.css" rel="stylesheet">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js" defer></script>
     </head>
     <body>
@@ -58,12 +59,12 @@ and open the template in the editor.
                 </div>
                 <div class="options">
                     <div class="buffer">
-                        <label for="sections" class="lables">Round time limit: </label>
+                        <label for="sections" class="lables" id="guess">Round time limit: </label>
                         <select name="sections" id="sections" class="sections">
-                            <option value="30">30 seconds</option>
-                            <option value="60">1 minute</option>
-                            <option value="120">2 minutes</option>
-                            <option value="300">5 minutes</option>
+                            <option value="34">30 seconds</option>
+                            <option value="64">1 minute</option>
+                            <option value="124">2 minutes</option>
+                            <option value="304">5 minutes</option>
                         </select>
                     </div>
                     
@@ -71,9 +72,9 @@ and open the template in the editor.
                         <label for="sections" class="lables">Number of rounds: </label>
                         <select name="sections" id="sections2" class="sections">
                             <option value="1">1</option>
-                            <option value="1">2</option>
-                            <option value="1">3</option>
-                            <option value="1">4</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
                         </select>
                     </div>
                     
@@ -93,6 +94,51 @@ and open the template in the editor.
                 </div>
             </div>
         </main>
+        
+        <!-- page 3  code begins here -->
+        <div class="iamge">
+                <img src="images/logo 1.png" width="300" height="113" alt="Logo">
+        </div>
+        <div class="Nextpage">    
+            <div>
+                <div id="container">
+                    <div id="game">
+                        <div class="buffer">
+                            <h1 class="title">WORDLE with friends</h1>
+                        </div>
+
+                        <div id="board-container">
+                            <div id="board"></div>
+                        </div>
+
+                        <div class="gameInfo">
+                            <div class="buffer">
+                                <div class="rounds">  </div>
+                            </div>
+
+                            <div class="buffer">
+                                <div class="timer">  </div>
+                            </div>
+                            
+                            <div class="buffer">
+                                <div class="score">  </div>
+                            </div>
+                        </div>
+
+                        <div class="input">
+                            <div class="buffer">
+                                <label class="lables" for="guess">Enter 5 letter word: </label>
+                                <input name="guess" class="textboxes" maxlength="5" placeholder="craze" id="inputGuess">
+                            </div>
+                            <div class="buffer">
+                                <button class="submit">Check</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <script src="JS/lobby.js" defer></script>
     </body>
 </html>

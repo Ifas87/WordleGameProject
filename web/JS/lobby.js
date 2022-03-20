@@ -16,14 +16,34 @@ var gameID = sessionStorage.getItem('gameID');
 var endpoint = "ws://"+document.location.host+"/GameProject/lobbier";
 var websocket = new WebSocket(endpoint);
 
-var endpointGame = "ws://"+document.location.host+"/GameProject/game";
-var websocketNew = new WebSocket(endpointGame);
-
 console.log(endpoint);
 
 var chatbox = document.querySelector(".text_holder3");
 var textarea = document.getElementById("textarea");
 
+var highExplosiveResearch = "";
+var rounds = 0;
+var timer = 0;
+var points = 0;
+var playerList = [];
+var scoreList = [];
+
+var start = false;
+var wordlist = [];
+var timerInterval;
+
+
+function createSquares() {
+    const gameBoard = document.getElementById("board");
+
+    for (let index = 0; index < 30; index++) {
+        let square = document.createElement("div");
+        square.classList.add("square");
+        square.classList.add("animate__animated");
+        square.setAttribute("id", index + 1);
+        gameBoard.appendChild(square);
+    }
+}
 
 
 function send(obj) {
@@ -33,14 +53,17 @@ function send(obj) {
 window.onload = function() {
     document.querySelector(".options").style.visibility = "hidden";
     
-    if(host != null){
+    if(host !== null){
         isHost = true;
         document.querySelector(".options").style.visibility = "visible";
     }
     
-    console.log(gameID + " " + host + " " + guest + " " + isHost);
     document.getElementById("gameIDinsert").innerHTML = ("GameID: " + gameID);
     document.querySelector(".text_holder1").innerHTML = (isHost ? host : guest);
+    
+    createSquares();
+    document.querySelector(".mainbox").style.visibility = "Visible";
+    document.querySelector(".Nextpage").style.visibility = "Hidden";
     
     let packet = {
         event : (isHost ? "lobbyStart" : "lobbyJoin"),
@@ -53,6 +76,8 @@ window.onload = function() {
         sessionStorage.setItem('intialConnect', true);
     }
     //send(packet);
+    
+    console.log("All session storages " + host + " " + guest + " " + isHost + " " + gameID);
 };
 
 websocket.onmessage = function(evt) {
@@ -66,12 +91,17 @@ websocket.onmessage = function(evt) {
         receiveMessage(message);
     else if (message["event"] === "gameStart")
         gameStartReact(message);
+    else if (message["event"] === "receiveWords")
+        receiveWordList(message);
+    else if (message["event"] === "lobbyWinners")
+        updateResults(message)
 };
 
 
 
 document.getElementById("chatBroadcast").addEventListener("click", postMessage);
 document.getElementById("starter").addEventListener("click", gameStart);
+document.querySelector(".submit").addEventListener("click", addGuess);
 
 function postMessage(){
     console.log("Working");
@@ -91,7 +121,7 @@ function postMessage(){
 
 function lobbyFailure(obj){
     alert(obj["message"]);
-    var redirect = obj["redirect"]; //"http://localhost:8080/GameProject";
+    var redirect = obj["redirect"]; 
     window.location.replace(redirect);
 }
 
@@ -119,14 +149,212 @@ function gameStart(){
     
     send(packet);
     
-    sessionStorage.setItem('max_time', (document.getElementById("sections")).value);
-    sessionStorage.setItem('rounds', (document.getElementById("sections2")).value);
+    //sessionStorage.setItem('max_time', (document.getElementById("sections")).value);
+    //sessionStorage.setItem('rounds', (document.getElementById("sections2")).value);
 }
 
 function gameStartReact(obj){
+    
     sessionStorage.setItem('max_time', obj["rounds"]);
     sessionStorage.setItem('rounds', obj["time"]);
     
-    websocket.close();
-    window.location.href = obj["message"];
+    document.querySelector(".mainbox").style.visibility = "Hidden";
+    document.querySelector(".Nextpage").style.visibility = "Visible";
+    
+    rounds = (document.getElementById("sections2")).value;
+    timer = (document.getElementById("sections")).value;
+    
+    getWordList();
+}
+
+function getWordList(){
+    console.log("Running and getting words");
+    let packet = {
+        event : "receiveWords",
+        sender : (isHost ? host : guest),
+        game : (""+gameID)
+    };
+    
+    send(packet);
+}
+
+var crounds = 1;
+var tnew_timer = 0;
+function timerStart(){
+    console.log((parseInt(rounds)+1));
+    if(tnew_timer === 0){
+        crounds += 1;
+        if(parseInt(crounds) >= (parseInt(rounds)+1) ){
+            endGame();
+            clearInterval(timerInterval);
+            return;
+        }
+        
+        console.log("End of Round");
+        tnew_timer = timer;
+    }
+    
+    tnew_timer -= 1;
+    
+    let stopwatch = document.querySelector(".timer");
+    let roundwatch = document.querySelector(".rounds");
+    
+    roundwatch.innerHTML = `Round: ${crounds} / ${rounds}`;
+    stopwatch.innerHTML = ` ${tnew_timer} seconds remaining`;
+}
+
+function receiveWordList(obj){
+    wordlist = JSON.parse(obj["message"]);
+    console.log(wordlist);
+    
+    displayAllWords();
+    getNewWord();
+    console.log("Answer: " + highExplosiveResearch);
+    
+    tnew_timer = timer;
+    timerInterval = setInterval(timerStart, 1000);
+    console.log(tnew_timer, timer);
+}
+
+function displayAllWords(){
+    let tempAnswers = document.createElement("div");
+    tempAnswers.classList.add("answers");
+    
+    for (let i=0; i<wordlist.length; i++){
+        let tempDiv = document.createElement("div");
+        tempDiv.innerHTML = wordlist[i];
+        tempDiv.classList.add("answerWord");
+        
+        tempAnswers.appendChild(tempDiv);
+    }
+    document.body.appendChild(tempAnswers);
+    setTimeout(function(){document.body.removeChild(tempAnswers)} , 4000);
+}
+
+function getNewWord() {
+    highExplosiveResearch = wordlist[Math.floor(Math.random() * wordlist.length)];
+    highExplosiveResearch = highExplosiveResearch.toUpperCase();
+}
+
+var row = 0;
+function addGuess(){
+    let scorewatch = document.querySelector(".score");
+    let guess = document.getElementById("inputGuess");
+    let evaluations = 0;
+    
+    if(guess.value === "" || guess.value.length < 5 ){
+        alert("Enter a 5 letter word!");
+        return;
+    }
+    
+    let word = (guess.value).toUpperCase();
+    
+    // Evalusations part
+    for (let i=0; i<5; i++){
+        let index = ((row*5)+(i+1)).toString();
+        let tempTile = document.getElementById(index);
+        
+        if(tempTile === null){
+            console.log("Ending the round due to lack of space");
+            endRound();
+            row = 0;
+            break;
+        }
+        
+        if(word.charAt(i) === highExplosiveResearch.charAt(i)){    
+            tempTile.classList.add("correct");
+            tempTile.innerHTML = word.charAt(i);
+            points+=20;
+            console.log("Same: " + index);
+            evaluations += 1;
+            
+            if(evaluations >= 5){
+                console.log("All correct");
+                row = 0;
+                points += (5*tnew_timer);
+                scorewatch.innerHTML = `${points} points`;
+                
+                setTimeout(endRound, 3000);
+                return;
+            }
+        }
+        
+        else if(highExplosiveResearch.includes(word.charAt(i))){
+            tempTile.classList.add("halfWay");
+            tempTile.innerHTML = word.charAt(i);
+            points+=10;
+            console.log("Similar: " + index);
+        }
+        
+        else{
+            tempTile.classList.add("wrong");
+            tempTile.innerHTML = word.charAt(i);
+            console.log("Not same: " + index);
+        }
+        
+        scorewatch.innerHTML = `${points} points`;
+        
+    }
+    
+    row+=1;
+}
+
+function endRound(){
+    console.log("Ending of round triggered");
+    
+    // When round ends at the end of a timer
+    if( parseInt(crounds) >= (parseInt(rounds)+1) ){
+        console.log("Time ending");
+        clearInterval(timerInterval);
+        endGame();
+        return;
+    }
+    
+    // Round ends due to correct word
+    else if (parseInt(crounds) === (parseInt(rounds))) {
+        console.log("All correct ending");
+        clearInterval(timerInterval);
+        endGame();
+        return;
+    }
+    
+    // Normal round end with no correct answer move on to next round if exists
+    else {
+        crounds += 1;
+        setTimeout(function () {tnew_timer = timer;}, 2000);
+    }
+    
+    highExplosiveResearch = wordlist[Math.floor(Math.random() * wordlist.length)];
+    tnew_timer = timer;
+    
+    for (let index = 0; index < 30; index++) {
+        console.log("Index: " + (index+1).toString());
+        let tile = document.getElementById( (index+1).toString() );
+        tile.innerHTML = "";
+        tile.removeAttribute("class");
+        tile.classList.add("square");
+        tile.classList.add("animate__animated"); 
+    }
+}
+
+function endGame(){
+    console.log("Ending of game triggered");
+    let packet = {
+        event : "endGame",
+        sender : (isHost ? host : guest),
+        game : (""+gameID),
+        score : points
+    };
+    
+    send(packet);
+    
+    setTimeout( function(){
+        document.querySelector(".mainbox").style.visibility = "Visible";
+        document.querySelector(".Nextpage").style.visibility = "Hidden";
+    }, 3000);
+}
+
+function updateResults(obj){
+    let results = "1st Place  " + obj["message"];
+    document.querySelector(".text_holder2").innerHTML = results;
 }

@@ -9,10 +9,20 @@ and open the template in the editor.
 */
 
 
-.mainbox {
-  height: 100%;
-  display:flex;
-  flex-direction: column;
+
+.Nextpage{
+    height: 100%;
+    width: 100%;
+    
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    
+    display:flex;
+    flex-direction: column;
+    
+    z-index: 4;
+    background-color: #fff;
 }
 
 #container {
@@ -20,6 +30,8 @@ and open the template in the editor.
   height: 100%;
   align-items: center;
   flex-direction: column;
+  
+  z-index: 4;
 }
 
 #game {
@@ -28,6 +40,8 @@ and open the template in the editor.
   height: 100%;
   display: flex;
   flex-direction: column;
+  
+  z-index: 4;
 }
 
 .buffer{
@@ -37,6 +51,8 @@ and open the template in the editor.
     
     align-items: center;
     justify-content: center;
+    
+    z-index: 4;
 }
 
 .title {
@@ -45,6 +61,8 @@ and open the template in the editor.
   margin: 10px 0 10px 0;
   text-align: center;
   font-family: Montserrat;
+  
+  z-index: 4;
 }
 
 #board-container {
@@ -53,6 +71,20 @@ and open the template in the editor.
   align-items: center;
   flex-grow: 1;
   overflow: hidden;
+  
+  z-index: 4;
+}
+
+.timer{
+    z-index: 4;
+}
+
+.rounds{
+    z-index: 4;
+}
+
+.score{
+    z-index: 4;
 }
 
 #board {
@@ -61,6 +93,8 @@ and open the template in the editor.
   grid-gap: 5px;
   padding: 10px;
   box-sizing: border-box;
+  
+  z-index: 4;
 }
 
 .square {
@@ -69,12 +103,15 @@ and open the template in the editor.
   min-height: 60px;
   font-size: 50px;
   font-weight: bold;
-  color: gainsboro;
+  font-family: Montserrat;
+  color: white;
   text-transform: uppercase;
 
   display: flex;
   justify-content: center;
   align-items: center;
+  
+  z-index: 4;
 }
 
 .spacer-half {
@@ -85,6 +122,8 @@ and open the template in the editor.
     position: absolute;
     top: 0%;
     left: 80%;
+    
+    z-index: 20;
 }
 
 .gameInfo{
@@ -97,6 +136,8 @@ and open the template in the editor.
     font-family: Montserrat;
     font-size: 35px;
     font-weight: 600;
+    
+    z-index: 4;
 }
 
 .lables{
@@ -105,6 +146,8 @@ and open the template in the editor.
     font-weight: 600;
     
     padding: 3px;
+    
+    z-index: 4;
 }
 
 .textboxes{
@@ -116,6 +159,8 @@ and open the template in the editor.
     margin: 4px;
     border-width: 0 0 6px;
     border-color:#1A73E8;
+    
+    z-index: 4;
 }
 
 .submit{
@@ -137,6 +182,8 @@ and open the template in the editor.
     cursor: pointer;
     transition-duration: 0.5s;
     box-shadow: 0 3px #888;
+    
+    z-index: 4;
 }
 
 .submit:hover{
