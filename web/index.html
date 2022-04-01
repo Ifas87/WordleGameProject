@@ -10,12 +10,14 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
         
+        <!-- Links to other external elements -->
         <link href="CSS/main.css" rel="stylesheet">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js" defer></script>
         <script src="JS/index.js" defer></script>
     </head>
     <body>
         <main class="mainbox">
+            <!-- Logo -->
             <div class="iamge">
                 <img src="images/logo 1.png" width="300" height="113" alt="Logo">
             </div>
@@ -23,10 +25,12 @@
                 <h1 class="title">Wordle with Friends</h1>
             </div>
                 <div class="allForms">
+                    <!-- Flexbox element -->
                     <div class="containerGame">
                         <div class="buffer">
                             <h2 class="subtitle">Host game</h1>
                         </div>
+                        <!-- A custom form used to obtain user details in text format -->
                         <form action="redirectServlet" method="POST" id="hostForm">
                             <div class="buffer">
                                 <label for="hostname" class="labels">Enter chosen host name: </label>
@@ -43,10 +47,12 @@
                             </div>
                         </form>
                     </div>
+                    <!-- Flexbox element -->
                     <div class="containerGame">
                         <div class="buffer">
                             <h2 class="subtitle">Join game</h1>
                         </div>
+                        <!-- A custom form used to obtain user details in text format -->
                         <form action="redirectServlet" method="POST" id="joinForm">
                             <div class="buffer">
                                 <label for="guestname" class="labels">Enter name: </label>

@@ -6,6 +6,9 @@
 
 console.log("Started");
 
+// Taking control of form execution and submitting the form without redirection
+// The purpose here is to add the association status of the user to sessionStorage
+// And redirect to the lobby page
 $("#hostForm").submit(function(e) {
     sessionStorage.setItem('hostUsername', document.getElementById("hostID").value);
     sessionStorage.setItem('gameID', document.getElementById("hostGameID").value);
@@ -29,6 +32,9 @@ $("#hostForm").submit(function(e) {
     });
 });
 
+// Taking control of form execution and submitting the form without redirection
+// The purpose here is to add the association status of the user to sessionStorage
+// And redirect to the lobby page
 $("#joinForm").submit(function(e) {
     sessionStorage.setItem('username', document.getElementById("guestID").value);
     sessionStorage.setItem('gameID', document.getElementById("joinGameID").value);

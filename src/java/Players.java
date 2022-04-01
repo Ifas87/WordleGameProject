@@ -22,7 +22,9 @@ import org.json.simple.JSONArray;
 /**
  *
  * @author Safi
+ *
  */
+
 
 @ServerEndpoint ("/lobbier")
 public class Players {
@@ -130,12 +132,6 @@ public class Players {
     
     public void collectResults(JSONObject json) throws IOException{
         JSONObject obj = findLobbybyId( (""+json.get("game")) );
-        
-        /*
-            players.put("highscore", 0);
-            players.put("winner", "");
-            players.put("completedCount", 0);
-        */
         
         System.out.println(json.get("score"));
         int newScore = Integer.parseInt(""+json.get("score"));
@@ -250,27 +246,22 @@ public class Players {
         else if( json.get("event").equals("chatMessage") ){
             JSONObject lobby = findLobbybyId( ""+json.get("game") );
             String exclusion = "";
-            
-            //System.out.println("The find lobby: "+lobby.toJSONString());
-            
-            /*
-            for (int i=1; i<5; i++){
-                System.out.println("user"+i);
-                
-                if ( !(lobby.get( ("user"+i) ) instanceof String) )
-                    if( (""+json.get("sender")).equals( ((adress)lobby.get( ("user"+i)) ).getUsername()) )
-                        exclusion = "user"+i;
-            }
-            */
-            //broadCastLobby(JSONObject lobby, String exclusion, String event, String player, String message)
             broadCastLobby(lobby, exclusion, "chatMessage", (""+json.get("sender")), (""+json.get("message")));
         }
         
         else if ( json.get("event").equals("gameStart") ){
             JSONObject lobby = findLobbybyId( ""+json.get("game") );
             String exclusion = "";
+            int rounds = Integer.parseInt((String) json.get("rounds"));
+            int timer = Integer.parseInt((String) json.get("time"));
             
-            broadCastLobby(lobby, exclusion, "gameStart", (""+json.get("sender")), "http://" + hostname + ":8080/GameProject/game.html" );
+            for (int i=1; i<5; i++){
+                System.out.println("user"+i);
+                
+                if ( !(lobby.get( ("user"+i) ) instanceof String) ){
+                    ( (adress) lobby.get( ("user"+i) )).getServerSession().getBasicRemote().sendText( json.toJSONString() );
+                }
+            }
         }
         
         else if (json.get("event").equals("receiveWords")){
@@ -280,6 +271,19 @@ public class Players {
         else if (json.get("event").equals("endGame")){
             System.out.println("Activated results section");
             collectResults(json);
+        }
+        
+        else if (json.get("event").equals("timerStart")){
+            System.out.println("Timer called");
+            JSONObject lobby = findLobbybyId(""+json.get("game"));
+            int referenceTime = 0;
+            
+            Timer timer = new Timer();
+            TimerTask counter = new timerTask( Integer.parseInt((String)json.get("time")), referenceTime, timer );
+            
+            timer.schedule(counter, 1000, 1000);
+            broadCastLobby(lobby, "", "timerStart", (""+json.get("sender")), ""+referenceTime);
+            
         }
         //System.out.println("GameRoom "+gameRooms.toString());
     }

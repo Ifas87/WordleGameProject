@@ -6,6 +6,10 @@
 
 console.log("Active");
 
+/*
+ * Global variables that will be utilised throughout the program
+ * Includes setting up of socket to the server endpoint
+ */
 var host = sessionStorage.getItem('hostUsername');
 var guest = sessionStorage.getItem('username');
 var reloadBuffer = sessionStorage.getItem('intialConnect');
@@ -33,6 +37,11 @@ var wordlist = [];
 var timerInterval;
 
 
+/*
+ * Creates the grid of squares used to as the Wordle grid
+ * @param none
+ * @returns {undefined}
+ */
 function createSquares() {
     const gameBoard = document.getElementById("board");
 
@@ -45,11 +54,20 @@ function createSquares() {
     }
 }
 
-
+/*
+ * A function that converts a JSONObject to a JSONString to send via the websocket
+ * @param the packet JSONObject to send
+ * @returns {undefined}
+ */
 function send(obj) {
     websocket.send(JSON.stringify(obj));
 }
 
+/*
+ * The onload function used for initial setup
+ * It is used to ensure eveery component on the DOM has loaded
+ * @returns {undefined}
+ */
 window.onload = function() {
     document.querySelector(".options").style.visibility = "hidden";
     
@@ -75,11 +93,16 @@ window.onload = function() {
         websocket.onopen = () => send(packet);
         sessionStorage.setItem('intialConnect', true);
     }
-    //send(packet);
     
     console.log("All session storages " + host + " " + guest + " " + isHost + " " + gameID);
 };
 
+
+/*
+ * Response function used to redirecrt the event to the correct handling function
+ * @param the event object from the server websocket
+ * @returns {undefined}
+ */
 websocket.onmessage = function(evt) {
     let message = JSON.parse(evt.data);
     
@@ -94,15 +117,32 @@ websocket.onmessage = function(evt) {
     else if (message["event"] === "receiveWords")
         receiveWordList(message);
     else if (message["event"] === "lobbyWinners")
-        updateResults(message)
+        updateResults(message);
+    /*
+    else if (message["event"] === "timerStart")
+        timerUpdate(message);
+    */
 };
 
 
-
+// Event listeners attached to various action buttons in the program
 document.getElementById("chatBroadcast").addEventListener("click", postMessage);
 document.getElementById("starter").addEventListener("click", gameStart);
 document.querySelector(".submit").addEventListener("click", addGuess);
 
+function timerUpdate(obj){
+    timerValue = obj["message"]
+    //let stopwatch = document.querySelector(".timer");
+    
+    stopwatch.innerHTML = ` ${timerValue} seconds remaining`;
+}
+
+
+/*
+ * Function used to post each chat message to the server for broadcasrting
+ * @param none
+ * @returns {undefined}
+ */
 function postMessage(){
     console.log("Working");
     let text = (isHost ? host : guest) + ": " + textarea.value;
@@ -119,12 +159,23 @@ function postMessage(){
     textarea.value = "";
 }
 
+/*
+ * A function that redirects to the initial page in the event of a lobby error on
+ * the server
+ * @param the JSONObject packet from the server
+ * @returns {undefined}
+ */
 function lobbyFailure(obj){
     alert(obj["message"]);
     var redirect = obj["redirect"]; 
     window.location.replace(redirect);
 }
 
+/*
+ * Handler function for when a player joins, used to 
+ * @param none
+ * @returns {undefined}
+ */
 function playerJoin(obj, str){
     let current = document.querySelector(".text_holder1").innerHTML;
     if (!current.includes(str))
@@ -143,8 +194,8 @@ function gameStart(){
         event : "gameStart",
         sender : (isHost ? host : guest),
         game : (""+gameID),
-        rounds : (document.getElementById("sections")).value,
-        time : (document.getElementById("sections2")).value
+        rounds : (document.getElementById("sections2")).value,
+        time : (document.getElementById("sections")).value
     };
     
     send(packet);
@@ -161,8 +212,8 @@ function gameStartReact(obj){
     document.querySelector(".mainbox").style.visibility = "Hidden";
     document.querySelector(".Nextpage").style.visibility = "Visible";
     
-    rounds = (document.getElementById("sections2")).value;
-    timer = (document.getElementById("sections")).value;
+    rounds = obj["rounds"];
+    timer = obj["time"];
     
     getWordList();
 }
@@ -194,10 +245,11 @@ function timerStart(){
         tnew_timer = timer;
     }
     
+    console.log(tnew_timer + " " +timer);
     tnew_timer -= 1;
     
-    let stopwatch = document.querySelector(".timer");
     let roundwatch = document.querySelector(".rounds");
+    let stopwatch = document.querySelector(".timer");
     
     roundwatch.innerHTML = `Round: ${crounds} / ${rounds}`;
     stopwatch.innerHTML = ` ${tnew_timer} seconds remaining`;
@@ -212,6 +264,7 @@ function receiveWordList(obj){
     console.log("Answer: " + highExplosiveResearch);
     
     tnew_timer = timer;
+    
     timerInterval = setInterval(timerStart, 1000);
     console.log(tnew_timer, timer);
 }
@@ -229,6 +282,16 @@ function displayAllWords(){
     }
     document.body.appendChild(tempAnswers);
     setTimeout(function(){document.body.removeChild(tempAnswers)} , 4000);
+    
+    
+    let packet = {
+        event : "timerStart",
+        sender : (isHost ? host : guest),
+        game : (""+gameID),
+        time : timer
+    };
+    
+    send(packet);
 }
 
 function getNewWord() {
