@@ -87,6 +87,13 @@ and open the template in the editor.
     z-index: 4;
 }
 
+.info{
+    z-index: 4;
+    width: 300px;
+    overflow-wrap: break-word;
+    font-size: 12px;
+}
+
 #board {
   display: grid;
   grid-template-columns: repeat(5, 1fr);

@@ -32,9 +32,10 @@ var points = 0;
 var playerList = [];
 var scoreList = [];
 
-var start = false;
+var start = true;
+var end = false;
+var guessesPossible = true;
 var wordlist = [];
-var timerInterval;
 
 
 /*
@@ -118,10 +119,8 @@ websocket.onmessage = function(evt) {
         receiveWordList(message);
     else if (message["event"] === "lobbyWinners")
         updateResults(message);
-    /*
-    else if (message["event"] === "timerStart")
+    else if (message["event"] === "timerUpdate")
         timerUpdate(message);
-    */
 };
 
 
@@ -130,10 +129,74 @@ document.getElementById("chatBroadcast").addEventListener("click", postMessage);
 document.getElementById("starter").addEventListener("click", gameStart);
 document.querySelector(".submit").addEventListener("click", addGuess);
 
-function timerUpdate(obj){
-    timerValue = obj["message"]
-    //let stopwatch = document.querySelector(".timer");
+/*
+function timerStart(){
+    console.log((parseInt(rounds)+1));
+    if(tnew_timer === 0){
+        crounds += 1;
+        if(parseInt(crounds) >= (parseInt(rounds)+1) ){
+            endGame();
+            clearInterval(timerInterval);
+            return;
+        }
+        
+        console.log("End of Round");
+        tnew_timer = timer;
+    }
     
+    console.log(tnew_timer + " " +timer);
+    tnew_timer -= 1;
+    
+    let roundwatch = document.querySelector(".rounds");
+    let stopwatch = document.querySelector(".timer");
+    
+    roundwatch.innerHTML = `Round: ${crounds} / ${rounds}`;
+    stopwatch.innerHTML = ` ${tnew_timer} seconds remaining`;
+}
+*/
+
+var crounds = 1;
+var tnew_timer = timer;
+
+function timerUpdate(obj){
+    
+    timerValue = obj["message"]
+    tnew_timer = parseInt(timerValue);
+    
+    if(timerValue <= -1){
+        crounds += 1;
+        
+        console.log( "Once trigger: " + (parseInt(crounds) >= (parseInt(rounds)+1)) && end );
+        if( (parseInt(crounds) >= (parseInt(rounds)+1)) && end ){
+            end = false;
+            console.log("Enfing triggered due to game end");
+            guessesPossible = true;
+            endGame();
+            return;
+        }
+        let packet = {
+            event : "timerUpdate",
+            sender : (isHost ? host : guest),
+            game : (""+gameID),
+            time : timer
+        };
+        
+        guessesPossible = true;
+        
+        for (let index = 0; index < 30; index++) {
+            let tile = document.getElementById( (index+1).toString() );
+            tile.innerHTML = "";
+            tile.removeAttribute("class");
+            tile.classList.add("square");
+            tile.classList.add("animate__animated"); 
+        }
+        
+        send(packet);
+    }
+    let roundwatch = document.querySelector(".rounds");
+    roundwatch.innerHTML = `Round: ${crounds} / ${rounds}`;
+    
+    let stopwatch = document.querySelector(".timer");
     stopwatch.innerHTML = ` ${timerValue} seconds remaining`;
 }
 
@@ -229,32 +292,6 @@ function getWordList(){
     send(packet);
 }
 
-var crounds = 1;
-var tnew_timer = 0;
-function timerStart(){
-    console.log((parseInt(rounds)+1));
-    if(tnew_timer === 0){
-        crounds += 1;
-        if(parseInt(crounds) >= (parseInt(rounds)+1) ){
-            endGame();
-            clearInterval(timerInterval);
-            return;
-        }
-        
-        console.log("End of Round");
-        tnew_timer = timer;
-    }
-    
-    console.log(tnew_timer + " " +timer);
-    tnew_timer -= 1;
-    
-    let roundwatch = document.querySelector(".rounds");
-    let stopwatch = document.querySelector(".timer");
-    
-    roundwatch.innerHTML = `Round: ${crounds} / ${rounds}`;
-    stopwatch.innerHTML = ` ${tnew_timer} seconds remaining`;
-}
-
 function receiveWordList(obj){
     wordlist = JSON.parse(obj["message"]);
     console.log(wordlist);
@@ -262,11 +299,23 @@ function receiveWordList(obj){
     displayAllWords();
     getNewWord();
     console.log("Answer: " + highExplosiveResearch);
-    
-    tnew_timer = timer;
-    
-    timerInterval = setInterval(timerStart, 1000);
-    console.log(tnew_timer, timer);
+}
+
+function debouncing(){
+    if (start === true){
+        let packet = {
+                event : "timerUpdate",
+                sender : (isHost ? host : guest),
+                game : (""+gameID),
+                time : timer
+        };
+
+        if (isHost){
+            console.log((isHost ? host : guest) + " Package sent")
+            send(packet);
+        }
+        start = false;
+    }
 }
 
 function displayAllWords(){
@@ -281,17 +330,15 @@ function displayAllWords(){
         tempAnswers.appendChild(tempDiv);
     }
     document.body.appendChild(tempAnswers);
-    setTimeout(function(){document.body.removeChild(tempAnswers)} , 4000);
+    var tryTimeout = setTimeout(function(){
+        document.body.removeChild(tempAnswers);
+        end = true;
+        
+        debouncing();
+        clearTimeout(tryTimeout);
+    } , 4000);
     
-    
-    let packet = {
-        event : "timerStart",
-        sender : (isHost ? host : guest),
-        game : (""+gameID),
-        time : timer
-    };
-    
-    send(packet);
+    tnew_timer = timer;
 }
 
 function getNewWord() {
@@ -312,54 +359,58 @@ function addGuess(){
     
     let word = (guess.value).toUpperCase();
     
-    // Evalusations part
-    for (let i=0; i<5; i++){
-        let index = ((row*5)+(i+1)).toString();
-        let tempTile = document.getElementById(index);
-        
-        if(tempTile === null){
-            console.log("Ending the round due to lack of space");
-            endRound();
-            row = 0;
-            break;
-        }
-        
-        if(word.charAt(i) === highExplosiveResearch.charAt(i)){    
-            tempTile.classList.add("correct");
-            tempTile.innerHTML = word.charAt(i);
-            points+=20;
-            console.log("Same: " + index);
-            evaluations += 1;
-            
-            if(evaluations >= 5){
-                console.log("All correct");
+    if (guessesPossible === true) {
+        // Evalusations part
+        for (let i=0; i<5; i++){
+            let index = ((row*5)+(i+1)).toString();
+            let tempTile = document.getElementById(index);
+
+            if(tempTile === null){
+                console.log("Ending the round due to lack of space");
                 row = 0;
-                points += (5*tnew_timer);
-                scorewatch.innerHTML = `${points} points`;
-                
-                setTimeout(endRound, 3000);
-                return;
+                break;
             }
+
+            if(word.charAt(i) === highExplosiveResearch.charAt(i)){    
+                tempTile.classList.add("correct");
+                tempTile.innerHTML = word.charAt(i);
+                points+=20;
+                console.log("Same: " + index);
+                evaluations += 1;
+
+                if(evaluations >= 5){
+                    console.log("All correct");
+                    row = 0;
+                    if(tnew_timer >= timer/2){
+                        points += (10*tnew_timer);
+                    }
+                    else {
+                        points += (5*tnew_timer);
+                    }
+                    scorewatch.innerHTML = `${points} points`;
+                    guessesPossible = false;
+                    (document.querySelector(".info")).innerHTML = "Waiting for other players to complete";
+                    return;
+                }
+            }
+
+            else if(highExplosiveResearch.includes(word.charAt(i))){
+                tempTile.classList.add("halfWay");
+                tempTile.innerHTML = word.charAt(i);
+                points+=10;
+                console.log("Similar: " + index);
+            }
+
+            else{
+                tempTile.classList.add("wrong");
+                tempTile.innerHTML = word.charAt(i);
+                console.log("Not same: " + index);
+            }
+
+            scorewatch.innerHTML = `${points} points`;
         }
-        
-        else if(highExplosiveResearch.includes(word.charAt(i))){
-            tempTile.classList.add("halfWay");
-            tempTile.innerHTML = word.charAt(i);
-            points+=10;
-            console.log("Similar: " + index);
-        }
-        
-        else{
-            tempTile.classList.add("wrong");
-            tempTile.innerHTML = word.charAt(i);
-            console.log("Not same: " + index);
-        }
-        
-        scorewatch.innerHTML = `${points} points`;
-        
+        row+=1;
     }
-    
-    row+=1;
 }
 
 function endRound(){
@@ -368,7 +419,6 @@ function endRound(){
     // When round ends at the end of a timer
     if( parseInt(crounds) >= (parseInt(rounds)+1) ){
         console.log("Time ending");
-        clearInterval(timerInterval);
         endGame();
         return;
     }
@@ -376,7 +426,6 @@ function endRound(){
     // Round ends due to correct word
     else if (parseInt(crounds) === (parseInt(rounds))) {
         console.log("All correct ending");
-        clearInterval(timerInterval);
         endGame();
         return;
     }

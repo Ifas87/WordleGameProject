@@ -12,6 +12,9 @@ import java.io.*;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.json.JSONException;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -150,7 +153,7 @@ public class Players {
         }
         
         obj.put("completedCount", (Integer.parseInt(""+obj.get("completedCount")) + 1) );
-        
+        System.out.println( ((int)obj.get("completedCount")) + " " + countPlayers(obj) + " " + ( ((int)obj.get("completedCount")) >= countPlayers(obj)));
         if ( ((int)obj.get("completedCount")) >= countPlayers(obj)){
             String results = (String) obj.get("winner") + " : " + (int) obj.get("highscore");
             System.out.println(results);
@@ -172,7 +175,7 @@ public class Players {
     }
     
     @OnMessage
-    public void onMessage (Session session , String message) throws JSONException, ParseException, IOException{
+    public void onMessage (Session session , String message) throws JSONException, ParseException, IOException, InterruptedException{
         //System.out.println(message);
         
         JSONParser parser = new JSONParser();
@@ -273,17 +276,36 @@ public class Players {
             collectResults(json);
         }
         
-        else if (json.get("event").equals("timerStart")){
-            System.out.println("Timer called");
+        else if (json.get("event").equals("timerUpdate")){
             JSONObject lobby = findLobbybyId(""+json.get("game"));
+            System.out.println("Timer called " + ((String)json.get("sender")) );
             int referenceTime = 0;
             
-            Timer timer = new Timer();
-            TimerTask counter = new timerTask( Integer.parseInt((String)json.get("time")), referenceTime, timer );
-            
-            timer.schedule(counter, 1000, 1000);
-            broadCastLobby(lobby, "", "timerStart", (""+json.get("sender")), ""+referenceTime);
-            
+            Thread t1 = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    if( referenceTime <= 0 ){
+                        System.out.println("Done timing section");
+                        int referenceTime = Integer.parseInt((String)json.get("time"));
+                        while(referenceTime >= 0){
+                            referenceTime--;
+                            try {
+                                TimeUnit.SECONDS.sleep(1);
+                            } catch (InterruptedException ex) {
+                                System.out.println(ex);
+                            }
+
+                            try {
+                                //System.out.println("Message sent " + referenceTime);
+                                broadCastLobby(lobby, "", "timerUpdate", "sender", ""+referenceTime);
+                            } catch (IOException ex) {
+                                System.out.println(ex);
+                            }
+                        }
+                    }
+                }
+            });  
+            t1.start();
         }
         //System.out.println("GameRoom "+gameRooms.toString());
     }

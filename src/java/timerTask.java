@@ -30,11 +30,11 @@ public class timerTask extends TimerTask {
     public void changer(int current_seconds, int old_seconds){
         if(current_seconds <= 0){
             this.timer.cancel();
-            this.timer.purge();
+            //this.timer.purge();
             return;
         }
         
-        current_seconds -= 1;
+        current_seconds--;
         old_seconds = current_seconds;
         System.out.println("Time now: " + current_seconds + " " + old_seconds);
     }
