@@ -20,6 +20,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.json.simple.JSONArray;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 
 /**
@@ -93,29 +95,18 @@ public class Players {
         int randomIndex = (int)(Math.random()*(10));
         InputStream txt = (adress.class.getResourceAsStream("words.txt"));
         
+        Document doc = Jsoup.connect("http://" + hostname + ":8080/GameProject/words.txt").get();
+        String[] allwords = (doc.body().text()).split(" ");
+        System.out.println( allwords.toString() );
+        
         JSONArray lister = new JSONArray();
         
-        Scanner scanner = new Scanner(txt);
-        int count = 0;
-        int newIndex = 0;
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine();
-            if(count <= randomIndex){
-                count+=1;
-                continue;
-            }
-            else if (count > (randomIndex+20)){
-                count+=1;
-                break;
-            }
-            
-            lister.add(line.trim());
-            words[newIndex] = line.trim();
-            newIndex+=1;
-            count+=1;
-        }
-        scanner.close();
         
+        for (int i = 0; i < 20; i++) {
+            int randomness = (int) (Math.random() * (29 - 1)) + 1;
+            lister.add(allwords[randomness]);
+        }
+
         System.out.println(lister.toJSONString());
         
         // public void broadCastLobby(JSONObject lobby, String exclusion, String event, String player, String message)
@@ -155,6 +146,7 @@ public class Players {
         obj.put("completedCount", (Integer.parseInt(""+obj.get("completedCount")) + 1) );
         System.out.println( ((int)obj.get("completedCount")) + " " + countPlayers(obj) + " " + ( ((int)obj.get("completedCount")) >= countPlayers(obj)));
         if ( ((int)obj.get("completedCount")) >= countPlayers(obj)){
+            obj.put("completedCount", 0);
             String results = (String) obj.get("winner") + " : " + (int) obj.get("highscore");
             System.out.println(results);
             broadCastLobby(obj, "", "lobbyWinners", "server", results);
@@ -176,7 +168,7 @@ public class Players {
     
     @OnMessage
     public void onMessage (Session session , String message) throws JSONException, ParseException, IOException, InterruptedException{
-        //System.out.println(message);
+        System.out.println("");
         
         JSONParser parser = new JSONParser();
         JSONObject json = (JSONObject) parser.parse(message);
@@ -287,18 +279,15 @@ public class Players {
                     if( referenceTime <= 0 ){
                         System.out.println("Done timing section");
                         int referenceTime = Integer.parseInt((String)json.get("time"));
-                        while(referenceTime >= 0){
+                        while(referenceTime > 0){
                             referenceTime--;
-                            try {
-                                TimeUnit.SECONDS.sleep(1);
-                            } catch (InterruptedException ex) {
-                                System.out.println(ex);
-                            }
 
                             try {
-                                //System.out.println("Message sent " + referenceTime);
+                                TimeUnit.SECONDS.sleep(1);
                                 broadCastLobby(lobby, "", "timerUpdate", "sender", ""+referenceTime);
                             } catch (IOException ex) {
+                                System.out.println(ex);
+                            } catch (InterruptedException ex) {
                                 System.out.println(ex);
                             }
                         }

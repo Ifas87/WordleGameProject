@@ -4,8 +4,6 @@
  * and open the template in the editor.
  */
 
-console.log("Active");
-
 /*
  * Global variables that will be utilised throughout the program
  * Includes setting up of socket to the server endpoint
@@ -20,8 +18,6 @@ var gameID = sessionStorage.getItem('gameID');
 var endpoint = "ws://"+document.location.host+"/GameProject/lobbier";
 var websocket = new WebSocket(endpoint);
 
-console.log(endpoint);
-
 var chatbox = document.querySelector(".text_holder3");
 var textarea = document.getElementById("textarea");
 
@@ -34,6 +30,7 @@ var scoreList = [];
 
 var start = true;
 var end = false;
+var update = true;
 var guessesPossible = true;
 var wordlist = [];
 
@@ -95,7 +92,7 @@ window.onload = function() {
         sessionStorage.setItem('intialConnect', true);
     }
     
-    console.log("All session storages " + host + " " + guest + " " + isHost + " " + gameID);
+    //xconsole.log("All session storages " + host + " " + guest + " " + isHost + " " + gameID);
 };
 
 
@@ -129,31 +126,6 @@ document.getElementById("chatBroadcast").addEventListener("click", postMessage);
 document.getElementById("starter").addEventListener("click", gameStart);
 document.querySelector(".submit").addEventListener("click", addGuess);
 
-/*
-function timerStart(){
-    console.log((parseInt(rounds)+1));
-    if(tnew_timer === 0){
-        crounds += 1;
-        if(parseInt(crounds) >= (parseInt(rounds)+1) ){
-            endGame();
-            clearInterval(timerInterval);
-            return;
-        }
-        
-        console.log("End of Round");
-        tnew_timer = timer;
-    }
-    
-    console.log(tnew_timer + " " +timer);
-    tnew_timer -= 1;
-    
-    let roundwatch = document.querySelector(".rounds");
-    let stopwatch = document.querySelector(".timer");
-    
-    roundwatch.innerHTML = `Round: ${crounds} / ${rounds}`;
-    stopwatch.innerHTML = ` ${tnew_timer} seconds remaining`;
-}
-*/
 
 var crounds = 1;
 var tnew_timer = timer;
@@ -163,25 +135,25 @@ function timerUpdate(obj){
     timerValue = obj["message"]
     tnew_timer = parseInt(timerValue);
     
-    if(timerValue <= -1){
+    if(tnew_timer <= 0){
+        console.log((isHost ? host : guest) +" Values: " + (tnew_timer <= 0) + " " + (timerValue <= 0) + " " + crounds + " " + tnew_timer + " " + timerValue)
         crounds += 1;
         
-        console.log( "Once trigger: " + (parseInt(crounds) >= (parseInt(rounds)+1)) && end );
         if( (parseInt(crounds) >= (parseInt(rounds)+1)) && end ){
             end = false;
-            console.log("Enfing triggered due to game end");
             guessesPossible = true;
+            (document.querySelector(".info")).innerHTML = "";
+            (document.querySelector(".score")).innerHTML = "";
+            (document.querySelector(".rounds")).innerHTML = "";
+            (document.querySelector(".timer")).innerHTML = "";
+            start = true;
+            crounds = 1;
+            tnew_timer = timer;
+            score = 0;
+
             endGame();
             return;
         }
-        let packet = {
-            event : "timerUpdate",
-            sender : (isHost ? host : guest),
-            game : (""+gameID),
-            time : timer
-        };
-        
-        guessesPossible = true;
         
         for (let index = 0; index < 30; index++) {
             let tile = document.getElementById( (index+1).toString() );
@@ -191,7 +163,32 @@ function timerUpdate(obj){
             tile.classList.add("animate__animated"); 
         }
         
-        send(packet);
+        console.log((isHost ? host : guest)+" Are you a host? " + isHost);
+        guessesPossible = true;
+        (document.querySelector(".info")).innerHTML = "";
+        (document.querySelector(".score")).innerHTML = "";
+        (document.querySelector(".rounds")).innerHTML = "";
+        (document.querySelector(".timer")).innerHTML = "";
+        start = true;
+        score = 0;
+        tnew_timer = timer;
+        
+        highExplosiveResearch = wordlist[Math.floor(Math.random() * wordlist.length)];
+        highExplosiveResearch = highExplosiveResearch.toUpperCase();
+        console.log("Answer: " + highExplosiveResearch);
+        
+        debouncing();
+        /*
+        let packet = {
+            event : "timerUpdate",
+            sender : (isHost ? host : guest),
+            game : (""+gameID),
+            time : timer
+        };
+        if (isHost === true){
+            send(packet);
+        }
+        */
     }
     let roundwatch = document.querySelector(".rounds");
     roundwatch.innerHTML = `Round: ${crounds} / ${rounds}`;
@@ -207,7 +204,6 @@ function timerUpdate(obj){
  * @returns {undefined}
  */
 function postMessage(){
-    console.log("Working");
     let text = (isHost ? host : guest) + ": " + textarea.value;
     
     //document.querySelector(".text_holder3").innerHTML += `${text}<br>`;
@@ -262,9 +258,6 @@ function gameStart(){
     };
     
     send(packet);
-    
-    //sessionStorage.setItem('max_time', (document.getElementById("sections")).value);
-    //sessionStorage.setItem('rounds', (document.getElementById("sections2")).value);
 }
 
 function gameStartReact(obj){
@@ -282,7 +275,6 @@ function gameStartReact(obj){
 }
 
 function getWordList(){
-    console.log("Running and getting words");
     let packet = {
         event : "receiveWords",
         sender : (isHost ? host : guest),
@@ -375,7 +367,6 @@ function addGuess(){
                 tempTile.classList.add("correct");
                 tempTile.innerHTML = word.charAt(i);
                 points+=20;
-                console.log("Same: " + index);
                 evaluations += 1;
 
                 if(evaluations >= 5){
@@ -398,13 +389,11 @@ function addGuess(){
                 tempTile.classList.add("halfWay");
                 tempTile.innerHTML = word.charAt(i);
                 points+=10;
-                console.log("Similar: " + index);
             }
 
             else{
                 tempTile.classList.add("wrong");
                 tempTile.innerHTML = word.charAt(i);
-                console.log("Not same: " + index);
             }
 
             scorewatch.innerHTML = `${points} points`;
@@ -414,43 +403,20 @@ function addGuess(){
 }
 
 function endRound(){
-    console.log("Ending of round triggered");
     
-    // When round ends at the end of a timer
-    if( parseInt(crounds) >= (parseInt(rounds)+1) ){
-        console.log("Time ending");
-        endGame();
-        return;
-    }
-    
-    // Round ends due to correct word
-    else if (parseInt(crounds) === (parseInt(rounds))) {
-        console.log("All correct ending");
-        endGame();
-        return;
-    }
-    
-    // Normal round end with no correct answer move on to next round if exists
-    else {
-        crounds += 1;
-        setTimeout(function () {tnew_timer = timer;}, 2000);
-    }
-    
-    highExplosiveResearch = wordlist[Math.floor(Math.random() * wordlist.length)];
-    tnew_timer = timer;
+}
+
+function endGame(){
+    console.log("Ending of game triggered");
     
     for (let index = 0; index < 30; index++) {
-        console.log("Index: " + (index+1).toString());
         let tile = document.getElementById( (index+1).toString() );
         tile.innerHTML = "";
         tile.removeAttribute("class");
         tile.classList.add("square");
         tile.classList.add("animate__animated"); 
     }
-}
-
-function endGame(){
-    console.log("Ending of game triggered");
+    
     let packet = {
         event : "endGame",
         sender : (isHost ? host : guest),
