@@ -33,7 +33,7 @@ var end = false;
 var update = true;
 var guessesPossible = true;
 var wordlist = [];
-
+var baselink = "";
 
 /*
  * Creates the grid of squares used to as the Wordle grid
@@ -135,6 +135,12 @@ function timerUpdate(obj){
     timerValue = obj["message"]
     tnew_timer = parseInt(timerValue);
     
+    if (tnew_timer === 12){
+            console.log("Audio triggered "+(baselink+'panic.mp3'));
+            var audio = new Audio(baselink+'panic.mp3');
+            audio.play();
+    }
+    
     if(tnew_timer <= 0){
         console.log((isHost ? host : guest) +" Values: " + (tnew_timer <= 0) + " " + (timerValue <= 0) + " " + crounds + " " + tnew_timer + " " + timerValue)
         crounds += 1;
@@ -178,17 +184,6 @@ function timerUpdate(obj){
         console.log("Answer: " + highExplosiveResearch);
         
         debouncing();
-        /*
-        let packet = {
-            event : "timerUpdate",
-            sender : (isHost ? host : guest),
-            game : (""+gameID),
-            time : timer
-        };
-        if (isHost === true){
-            send(packet);
-        }
-        */
     }
     let roundwatch = document.querySelector(".rounds");
     roundwatch.innerHTML = `Round: ${crounds} / ${rounds}`;
@@ -268,6 +263,7 @@ function gameStartReact(obj){
     document.querySelector(".mainbox").style.visibility = "Hidden";
     document.querySelector(".Nextpage").style.visibility = "Visible";
     
+    baselink = obj["baselink"]
     rounds = obj["rounds"];
     timer = obj["time"];
     

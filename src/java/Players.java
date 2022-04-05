@@ -249,6 +249,7 @@ public class Players {
             String exclusion = "";
             int rounds = Integer.parseInt((String) json.get("rounds"));
             int timer = Integer.parseInt((String) json.get("time"));
+            json.put("baselink", ("http://" + hostname + ":8080/GameProject/"));
             
             for (int i=1; i<5; i++){
                 System.out.println("user"+i);
