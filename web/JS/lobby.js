@@ -81,13 +81,15 @@ window.onload = function() {
     document.querySelector(".mainbox").style.visibility = "Visible";
     document.querySelector(".Nextpage").style.visibility = "Hidden";
     
+    // Initial phase of joining the game used to authenticate users into the game 
     let packet = {
         event : (isHost ? "lobbyStart" : "lobbyJoin"),
         sender : (isHost ? host : guest),
         game : (""+gameID)
     };
     
-    if(reloadBuffer == null){
+    // Used to deal with website reloading to avoid multiple lobbyStart or LobbyJoin events at once
+    if(reloadBuffer === null){
         websocket.onopen = () => send(packet);
         sessionStorage.setItem('intialConnect', true);
     }
@@ -102,22 +104,33 @@ window.onload = function() {
  * @returns {undefined}
  */
 websocket.onmessage = function(evt) {
+    // The message received from the server
     let message = JSON.parse(evt.data);
     
+    // Event for the wrong gameID or too many players
     if (message["event"] === "incorrectLobby")
         lobbyFailure(message);
+    // LobbyJoin event used to display the other usernames
     else if (message["event"] === "playerJoin")
         playerJoin(message, message["guest"]);
+    // Chat event used to receive messages
     else if (message["event"] === "chatMessage")
         receiveMessage(message);
+    // Game start react event to switch pages
     else if (message["event"] === "gameStart")
         gameStartReact(message);
+    // Receiving the words for the game
     else if (message["event"] === "receiveWords")
         receiveWordList(message);
+    // Event for printing the 1st place winners
     else if (message["event"] === "lobbyWinners")
         updateResults(message);
+    // Event for updating and printing the timer
     else if (message["event"] === "timerUpdate")
         timerUpdate(message);
+    // Event for players leaving
+    else if (message["event"] === "playerLeaving")
+        removePlayer(message);
 };
 
 
@@ -127,24 +140,47 @@ document.getElementById("starter").addEventListener("click", gameStart);
 document.querySelector(".submit").addEventListener("click", addGuess);
 
 
+/*
+ * The removePlayer function removes the player name from playerlist
+ * @param the event object from the server websocket
+ * @returns none
+ */
+function removePlayer(obj){
+    let tempStr = document.querySelector(".text_holder1").innerHTML;
+    document.querySelector(".text_holder1").innerHTML = tempStr.replace("<br>"+obj["message"], " ");
+    console.log(document.querySelector(".text_holder1").innerHTML);
+}
+
+
+/*
+ * The timerUpdate function triggered in response to the server's timer response
+ * It handles the game state as well, switching rounds and managing the win conditions
+ * @param the event object from the server websocket
+ * @returns none
+ */
+
+// Tracker global variables for round and timer
 var crounds = 1;
 var tnew_timer = timer;
 
 function timerUpdate(obj){
-    
+    // Getting the timer value from the object
     timerValue = obj["message"]
     tnew_timer = parseInt(timerValue);
     
+    // Used to play custom audio to "motivate" the player
     if (tnew_timer === 12){
-            console.log("Audio triggered "+(baselink+'panic.mp3'));
             var audio = new Audio(baselink+'panic.mp3');
             audio.play();
     }
     
+    // Round or game end condition applied when the timer runs out
     if(tnew_timer <= 0){
-        console.log((isHost ? host : guest) +" Values: " + (tnew_timer <= 0) + " " + (timerValue <= 0) + " " + crounds + " " + tnew_timer + " " + timerValue)
+        //console.log((isHost ? host : guest) +" Values: " + (tnew_timer <= 0) + " " + (timerValue <= 0) + " " + crounds + " " + tnew_timer + " " + timerValue)
+        // Incrementing the round number
         crounds += 1;
         
+        // Checking if all the rounds have ended, if yes reset everything and trigger the game end for results
         if( (parseInt(crounds) >= (parseInt(rounds)+1)) && end ){
             end = false;
             guessesPossible = true;
@@ -155,12 +191,12 @@ function timerUpdate(obj){
             start = true;
             crounds = 1;
             tnew_timer = timer;
-            score = 0;
 
             endGame();
             return;
         }
         
+        // Clearing the game board by removing classes
         for (let index = 0; index < 30; index++) {
             let tile = document.getElementById( (index+1).toString() );
             tile.innerHTML = "";
@@ -169,22 +205,24 @@ function timerUpdate(obj){
             tile.classList.add("animate__animated"); 
         }
         
-        console.log((isHost ? host : guest)+" Are you a host? " + isHost);
+        //console.log((isHost ? host : guest)+" Are you a host? " + isHost);
+        // Restting all game variables (except rounds) for the next round
         guessesPossible = true;
         (document.querySelector(".info")).innerHTML = "";
         (document.querySelector(".score")).innerHTML = "";
         (document.querySelector(".rounds")).innerHTML = "";
         (document.querySelector(".timer")).innerHTML = "";
         start = true;
-        score = 0;
         tnew_timer = timer;
         
+        // Rechoosing a new word for the next round
         highExplosiveResearch = wordlist[Math.floor(Math.random() * wordlist.length)];
         highExplosiveResearch = highExplosiveResearch.toUpperCase();
         console.log("Answer: " + highExplosiveResearch);
         
         debouncing();
     }
+    // In the event that the timer is not 0 the rounds and timer values are displayed
     let roundwatch = document.querySelector(".rounds");
     roundwatch.innerHTML = `Round: ${crounds} / ${rounds}`;
     
@@ -226,7 +264,7 @@ function lobbyFailure(obj){
 }
 
 /*
- * Handler function for when a player joins, used to 
+ * Handler function for when a player joins, used to print their name in the player list
  * @param none
  * @returns {undefined}
  */
@@ -236,13 +274,22 @@ function playerJoin(obj, str){
         document.querySelector(".text_holder1").innerHTML += `<br>${str}`;
 }
 
+/*
+ * Handler function for when a new chat message is sent , used to print the messages into chat 
+ * @param none
+ * @returns {undefined}
+ */
 function receiveMessage(obj){
-    let current = document.querySelector(".text_holder1").innerHTML;
     let str = obj["message"];
     
     document.querySelector(".text_holder3").innerHTML += `<br>${str}`;
 }
 
+/*
+ * Handler function for when the host starts the game, used to provide round and time details to every guest 
+ * @param none
+ * @returns {undefined}
+ */
 function gameStart(){
     let packet = {
         event : "gameStart",
@@ -255,6 +302,12 @@ function gameStart(){
     send(packet);
 }
 
+/*
+ * Handler function for when a player joins, used to save round and timer values
+ * and change pages to game 
+ * @param websocket data JSONobject
+ * @returns {undefined}
+ */
 function gameStartReact(obj){
     
     sessionStorage.setItem('max_time', obj["rounds"]);
@@ -270,6 +323,11 @@ function gameStartReact(obj){
     getWordList();
 }
 
+/*
+ * Function used at the start of the game to get the 20 word array
+ * @param none
+ * @returns {undefined}
+ */
 function getWordList(){
     let packet = {
         event : "receiveWords",
@@ -280,6 +338,12 @@ function getWordList(){
     send(packet);
 }
 
+/*
+ * Handler function for when the wordlist is received, it saves this wordlist
+ * and triggers the display page and selects a new answer 
+ * @param none
+ * @returns {undefined}
+ */
 function receiveWordList(obj){
     wordlist = JSON.parse(obj["message"]);
     console.log(wordlist);
@@ -289,6 +353,12 @@ function receiveWordList(obj){
     console.log("Answer: " + highExplosiveResearch);
 }
 
+/*
+ * A workaround function used to handle the bugged setInterval and setTimeout functions
+ * Ensures that the timerUpdate call is only done once to avoid a breakdown of the game 
+ * @param none
+ * @returns {undefined}
+ */
 function debouncing(){
     if (start === true){
         let packet = {
@@ -306,6 +376,12 @@ function debouncing(){
     }
 }
 
+/*
+ * Function used to display all the words of the array into the answers page
+ * in a grid layout 
+ * @param none
+ * @returns {undefined}
+ */
 function displayAllWords(){
     let tempAnswers = document.createElement("div");
     tempAnswers.classList.add("answers");
@@ -318,6 +394,8 @@ function displayAllWords(){
         tempAnswers.appendChild(tempDiv);
     }
     document.body.appendChild(tempAnswers);
+    
+    // Set timeout to remove the answers page and start the timer after 4 pages
     var tryTimeout = setTimeout(function(){
         document.body.removeChild(tempAnswers);
         end = true;
@@ -329,36 +407,57 @@ function displayAllWords(){
     tnew_timer = timer;
 }
 
+/*
+ * Function to get a random word from the wordlist and make it capitalised for
+ * crosschecking 
+ * @param none
+ * @returns {undefined}
+ */
 function getNewWord() {
     highExplosiveResearch = wordlist[Math.floor(Math.random() * wordlist.length)];
     highExplosiveResearch = highExplosiveResearch.toUpperCase();
 }
 
+/*
+ * A complicated function that crosschecks the both the user's guess and the answers letter
+ * by letter to find the write and wrong letters.
+ * @param none
+ * @returns {undefined}
+ */
 var row = 0;
 function addGuess(){
+    // Variables to update the score and get guessed words
     let scorewatch = document.querySelector(".score");
     let guess = document.getElementById("inputGuess");
     let evaluations = 0;
     
+    // Input validation to ensure a 5 letter word
     if(guess.value === "" || guess.value.length < 5 ){
         alert("Enter a 5 letter word!");
         return;
     }
-    
+    // conversion to upper case for easier crosschecking
     let word = (guess.value).toUpperCase();
     
+    // Variable used to enable and disable checking
     if (guessesPossible === true) {
+        console.log("row is: "+row);
         // Evalusations part
         for (let i=0; i<5; i++){
+            // The current tile to write letter to
             let index = ((row*5)+(i+1)).toString();
             let tempTile = document.getElementById(index);
-
-            if(tempTile === null){
+            
+            // Check if all tiles are used
+            if(tempTile === null || index > 30){
                 console.log("Ending the round due to lack of space");
                 row = 0;
+                guessesPossible = false;
+                (document.querySelector(".info")).innerHTML = "Waiting for other players to complete";
                 break;
             }
-
+            
+            // Evaluation for correct tiles
             if(word.charAt(i) === highExplosiveResearch.charAt(i)){    
                 tempTile.classList.add("correct");
                 tempTile.innerHTML = word.charAt(i);
@@ -380,13 +479,15 @@ function addGuess(){
                     return;
                 }
             }
-
+            
+            // Evaluation for improper or misplaced letters
             else if(highExplosiveResearch.includes(word.charAt(i))){
                 tempTile.classList.add("halfWay");
                 tempTile.innerHTML = word.charAt(i);
                 points+=10;
             }
-
+            
+            // Evalutation for wrong letters
             else{
                 tempTile.classList.add("wrong");
                 tempTile.innerHTML = word.charAt(i);
@@ -394,14 +495,21 @@ function addGuess(){
 
             scorewatch.innerHTML = `${points} points`;
         }
+        // Move to next rows
         row+=1;
+        
+        if( row >= 6){
+            row=0;
+        }
     }
 }
 
-function endRound(){
-    
-}
-
+/*
+ * A complicated function that resets the board and all variables similar to the endround 
+ * function but also send the points for evaluation and results
+ * @param none
+ * @returns {undefined}
+ */
 function endGame(){
     console.log("Ending of game triggered");
     
@@ -422,12 +530,19 @@ function endGame(){
     
     send(packet);
     
+    points=0;
+    
     setTimeout( function(){
         document.querySelector(".mainbox").style.visibility = "Visible";
         document.querySelector(".Nextpage").style.visibility = "Hidden";
     }, 3000);
 }
 
+/*
+ * The function used to print out the results and the winner to the screen
+ * @param the web socket object with winner information
+ * @returns {undefined}
+ */
 function updateResults(obj){
     let results = "1st Place  " + obj["message"];
     document.querySelector(".text_holder2").innerHTML = results;
