@@ -35,6 +35,8 @@ var guessesPossible = true;
 var wordlist = [];
 var baselink = "";
 
+var row = 0;
+
 /*
  * Creates the grid of squares used to as the Wordle grid
  * @param none
@@ -170,6 +172,7 @@ function timerUpdate(obj){
     
     // Used to play custom audio to "motivate" the player
     if (tnew_timer === 12){
+            console.log(tnew_timer + " Audio");
             var audio = new Audio(baselink+'panic.mp3');
             audio.play();
     }
@@ -191,7 +194,8 @@ function timerUpdate(obj){
             start = true;
             crounds = 1;
             tnew_timer = timer;
-
+            row = 0;
+            
             endGame();
             return;
         }
@@ -214,6 +218,7 @@ function timerUpdate(obj){
         (document.querySelector(".timer")).innerHTML = "";
         start = true;
         tnew_timer = timer;
+        row=0;
         
         // Rechoosing a new word for the next round
         highExplosiveResearch = wordlist[Math.floor(Math.random() * wordlist.length)];
@@ -424,7 +429,7 @@ function getNewWord() {
  * @param none
  * @returns {undefined}
  */
-var row = 0;
+
 function addGuess(){
     // Variables to update the score and get guessed words
     let scorewatch = document.querySelector(".score");
